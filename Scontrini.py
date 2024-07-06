@@ -1,14 +1,12 @@
 import pandas as pd
-import os 
-import time as t
-import numpy as np
+import os
 import easyocr as ocr
 from PIL import Image
 import pillow_heif as ph
 import cv2
 from datetime import date as dt
 import re
-import matplotlib as plt
+
 
 reader = ocr.Reader(['it'])
 
