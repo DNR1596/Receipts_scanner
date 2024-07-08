@@ -59,6 +59,7 @@ class ImageFormatControl ():
                 print(f"File jpg succesfully Created: {output_path}")
             else:
                 print(f"Error encountered in creating jpg file: {output_path}")
+            return output_path
 
         except Exception as e:
             print(f"Could not convert: {e}")
