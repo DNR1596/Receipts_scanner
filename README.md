@@ -10,8 +10,8 @@ which will be used to create a dataframe or append to an already existing one
 Photo are pre-processed with iphone's photo editor to improve contrast and drop saturation
 
 To execute this program use:
-  python Scontrini.py followed by:
-    - N to create a new receipt / U to update an existing one
+  python Scontrini.py followed by:\n
+    - N to create a new receipt / U to update an existing one\n
     - Path for the image
   Example: python Scontrini.py N path\to\your\image
 
