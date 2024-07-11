@@ -13,6 +13,7 @@ To execute this program use:
 - python Scontrini.py followed by:
 - N to create a new receipt / U to update an existing one;
 - Path for the image
+
 Example: python Scontrini.py N path\to\your\image
 
 Use as working directory: Receipts_scanner-main
