@@ -8,11 +8,13 @@ import cv2
 from datetime import date as dt
 import re
 import time
+import torch
+from transformers import AutoTokenizer, AutoModel
 
-
+tokenizer = AutoTokenizer.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
+model = AutoModel.from_pretrained("dbmdz/bert-base-italian-xxl-cased")
 reader = ocr.Reader(['it'])
-#To do
-#   - introdurre LM o tecnologie semantiche tipo word2vec per escludere prodotti non interessanti, slide allegata alla mail
+
 
 
 
@@ -69,12 +71,6 @@ class ImageFormatControl ():
 
 
 
-
-
-
-
-
-
 def Acq_Bill(path):
     
 
@@ -103,6 +99,7 @@ def Acq_Bill(path):
     return text
 
 class Clean():
+    
     def SubString(text):
 
         # Splits the receipts, taking only the part where prices are displayed
@@ -132,6 +129,16 @@ class Clean():
                 text2.append(i)
         return text2
     
+    def get_embeddings(hidden_states, attention_mask):
+            mask = attention_mask.unsqueeze(-1).expand(hidden_states.size()).float()
+            masked_hidden_states = hidden_states * mask
+            summed_hidden_states = masked_hidden_states.sum(1)
+            summed_mask = mask.sum(1)
+            averaged_hidden_states = summed_hidden_states / summed_mask
+            return averaged_hidden_states
+
+
+
     def FinString(text2):
 
         # identify iva (italian tax on products), str in format price and other distractor.
@@ -153,20 +160,48 @@ class Clean():
         for el in text2:
             if el not in iva:
                 text3.append(el)
-
+        
         Prodotto = ''
         for el in text3[:]:
             el = el.strip()
             el2 = ''.join(el.split())
             el2 = el2.replace(',', '.')
-            if el == 'X' or 'SCONTO' in el or '~' in el:
-                text3.remove(el)
+            
             try:
                 float(el2)
                 text3.remove(el)
             except ValueError:
                 Prodotto = ''
+        #BERT ita language
+        list1 = ["SCONTO", 'X', '10X', '~0']
+        list2 = text3[:]
+        # Tokenize the words from both lists
+        inputs = tokenizer(list1 + list2, return_tensors='pt', padding=True, truncation=True)
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+
+        last_hidden_states = outputs.last_hidden_state
+
+        
+
+        # Separate embeddings for each word in both lists
+        embeddings = Clean.get_embeddings(last_hidden_states, inputs['attention_mask'])
+        embeddings_list1 = embeddings[:len(list1)]
+        embeddings_list2 = embeddings[len(list1):len(list1) + len(list2)]
+
+        # Calculate cosine similarities pairwise between the two lists
+        similarities = []
+        for i, word1 in enumerate(list1):
+            for j, word2 in enumerate(list2):
+                embedding1 = embeddings_list1[i].unsqueeze(0)
+                embedding2 = embeddings_list2[j].unsqueeze(0)
+                similarity = torch.cosine_similarity(embedding1, embedding2, dim=1).item()
+                if similarity > 0.77:
+                    text3.remove(word2)
         return text3
+
+
         
     def prices(text2):
 
