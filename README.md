@@ -17,7 +17,9 @@ To execute this program use:
 Example: python Scontrini.py N path\to\your\image
 
 Use as working directory: Receipts_scanner-main
+
 test images are located in a folder named 'input_img' accessible through relative path: input_img\nameoftheimg
+
 outuput will be stored in the 'output' folder
   
 
