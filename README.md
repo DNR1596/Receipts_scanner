@@ -3,6 +3,7 @@ Furthermore uses:
   - EasyOCR for image-to-text recognition
   - Pandas for data frame manipulation
   - Pillow and Pillow_heif for Image manipulation and conversion if the Image type is Heic (since OCR can not handle .heic files)
+  - Bert language model from Huggingface (https://github.com/dbmdz/berts)
 
 The program will ask every boot if you want to create a new receipt or update one already existing;
 automatically will extract text and perform string manipulation to have a final list of [(Product, Price),(...),...]
