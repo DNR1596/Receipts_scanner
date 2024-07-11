@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import os
 import easyocr as ocr
@@ -6,10 +7,13 @@ import pillow_heif as ph
 import cv2
 from datetime import date as dt
 import re
+import time
+from gensim.models import word2vec
 
 
 reader = ocr.Reader(['it'])
-
+#To do
+#   - introdurre LM o tecnologie semantiche tipo word2vec per escludere prodotti non interessanti, slide allegata alla mail
 
 
 
@@ -206,22 +210,27 @@ class Adj():
         for i in range(len(Prod)):
             print('-------------------------------------------------------------------')
             Prod_ok = input(
-            f'''recognised product: {Prod[i]}, \ncorrect product if written wrong, \nif it is correct press enter: ''')
+            f'''recognised product: {Prod[i]}, \ncorrect product if written wrong, if it is correct press enter: ''')
             if Prod_ok != '':
                 Prod[i] = Prod_ok
         print('-------------------------------------------------------------------')
-        print('Index) Product')
+        time.sleep(1.3)
         
+        print("Write index number of the element you want to remove, if everything is right press enter.\n")
+       
+        print('Index) Product')
         for i in range(len(Prod)):
             print(f'{i}) {Prod[i]}')
-        Indexstr = input("Write index number of the element you want to remove, if everything is right press enter.\n")
 
+        Indexstr = input()
         if Indexstr != '':
             IndexList = [int(el) for el in Indexstr.split(",")]
             IndexList = sorted(IndexList, reverse=True)
             for i in IndexList:
                 Prod.pop(i)
             del IndexList
+        
+        
 
 
         return Prod
@@ -232,13 +241,13 @@ class Adj():
         if Prodlen > Pricelen:
             diff = Prodlen - Pricelen
             Price.extend('*' for i in range(diff))
-        print(
-        '''check price linked to the product, \n add price if "*" is used, write new prices in the following format:\n index, price, ... if the price missing is assigned to a product wich already has a price\n don't worry, price will climb downwards''')
         print('-------------------------------------------------------------------')
+        print(
+        '''check price linked to the product: \nadd price if "*" is used, write new prices in the following format: index, price, ...\nif the price missing is assigned to a product wich already has a price don't worry, price will climb downwards\nif everything is right press enter''')
         print(f'Indice) Product : Price')
         for _ in range(len(Prod)):
             print(f'{_} ) {Prod[_]} : {Price[_]}')
-        CorrectedList = (input('Value to change').split(','))
+        CorrectedList = (input('Value to change: ').split(','))
         TupleCorrectedList = []
         while len(CorrectedList) > 1:
             index = CorrectedList[0]
@@ -258,7 +267,7 @@ class Adj():
 def SameLenght(L1, L2):
     if len(L1) != len(L2):
         return False
-    return True
+    return 'Writing receipt on dataframe'
 
 def Unification(L1, L2):
     Finlist = []
@@ -278,54 +287,57 @@ class Dataframe():
         df1 = pd.concat([df1, df2], axis=0, ignore_index=True)
         return df1
 
-            
 
-print('Welcome to the auto-record of your bills')
-print('-----------------------------------')
-valid = True
-while valid:
-    User = input('Please type N if you want to create a new table for receipts or U if you want to update one already existing ').upper()
-    day = dt.today()
-    formatted_day = day.strftime('%d/%m/%Y')
-    if User == 'N':
-        Path1 = input(r'Please insert path: ')
-        Path1 = Path1.removeprefix("'").removesuffix("'")
-        
-        if ImageFormatControl.HeicChecker(Path1):
-            Path2 = ImageFormatControl.HeicConverter(Path1)
+while True:
+    argv = sys.argv
+    if len(argv) == 3:
+        User, Path1 = argv[1], rf'{argv[2]}'
+        day = dt.today()
+        formatted_day = day.strftime('%d/%m/%Y')
+        if User == 'N':
+            Path1 = Path1.removeprefix("'").removesuffix("'")
+            
+            if ImageFormatControl.HeicChecker(Path1):
+                Path2 = ImageFormatControl.HeicConverter(Path1)
+            else:
+                Path2 = Path1
+            text = Acq_Bill(Path2)
+            MidProd = Clean.SubString(text) #Testo suddiviso ma da pulire
+            Product = Clean.FinString(MidProd) #Testo Finale dei prodotti
+            Price = Clean.prices(MidProd) #Prezzi ottenuti tramite le regex
+            FinProd = Adj.Product(Product)#Permette all'utente di correggere eventuali erorri di identificazione nei Prodotti
+            time.sleep(1) 
+            FinPrice = Adj.Prices(FinProd, Price) #Permette all'utente di correggere eventuali errori di identificazione nei Prezzi
+            Check = SameLenght(FinProd, FinPrice)
+            print(Check)
+            Finlist = Unification(FinProd, FinPrice)
+            df = Dataframe.Create(Finlist)
+            df.to_csv("output\\FirstReceipt.csv")
+            print('dataframe created, exiting the program')
+            time.sleep(1)
+            quit()
+        elif User == 'U':
+            if ImageFormatControl.HeicChecker(Path1):
+                Path2 = ImageFormatControl.HeicConverter(Path1)
+            else:
+                Path2 = Path1
+            df = pd.read_csv("output\\FirstReceipt.csv")
+            text = Acq_Bill(Path2)
+            MidProd = Clean.SubString(text)
+            Product = Clean.FinString(MidProd)
+            Price = Clean.prices(MidProd)
+            FinProd = Adj.Product(Product)
+            FinPrice = Adj.Prices(FinProd, Price)
+            Check = SameLenght(FinProd, FinPrice)
+            print(Check)
+            Finlist = Unification(FinProd, FinPrice)
+
+            df = Dataframe.Merge(df, Finlist).to_csv("output\\FirstReceipt.csv")
+            print('dataframe updated, exiting the program')
+            quit()
         else:
-            Path2 = Path1
-        text = Acq_Bill(Path2)
-        MidProd = Clean.SubString(text) #Testo suddiviso ma da pulire
-        Product = Clean.FinString(MidProd) #Testo Finale dei prodotti
-        Price = Clean.prices(MidProd) #Prezzi ottenuti tramite le regex
-        FinProd = Adj.Product(Product) #Permette all'utente di correggere eventuali erorri di identificazione nei Prodotti
-        FinPrice = Adj.Prices(FinProd, Price) #Permette all'utente di correggere eventuali errori di identificazione nei Prezzi
-        Check = SameLenght(FinProd, FinPrice)
-        print(Check)
-        Finlist = Unification(FinProd, FinPrice)
-        df = Dataframe.Create(Finlist)
-        df.to_csv("FirstReceipt.csv")
-        valid = False
-    elif User == 'U':
-        Path1 = input(r"Please insert path:").removeprefix('"').removesuffix('"')
-        if ImageFormatControl.HeicChecker(Path1):
-            Path2 = ImageFormatControl.HeicConverter(Path1)
-        else:
-            Path2 = Path1
-        df = pd.read_csv(r"D:\Informatica\Python\Scontrini\FirstReceipt.csv")
-        text = Acq_Bill(Path2)
-        MidProd = Clean.SubString(text)
-        Product = Clean.FinString(MidProd)
-        Price = Clean.prices(MidProd)
-        FinProd = Adj.Product(Product)
-        FinPrice = Adj.Prices(FinProd, Price)
-        Check = SameLenght(FinProd, FinPrice)
-        print(Check)
-        Finlist = Unification(FinProd, FinPrice)
-    
-        df = Dataframe.Merge(df, Finlist).to_csv(r"D:\Informatica\Python\Scontrini\FirstReceipt.csv")
-        valid = False
+            print(f'{User} does not correpond to either N or U, please try again')
+            
     else:
-        print(f'{User} does not correpond to either N or U, please try again')
-        valid = True
+        print('Not enough variables assigned, please digit N or U followed by the path of the image')
+        quit()
