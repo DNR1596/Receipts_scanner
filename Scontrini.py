@@ -8,7 +8,6 @@ import cv2
 from datetime import date as dt
 import re
 import time
-from gensim.models import word2vec
 
 
 reader = ocr.Reader(['it'])
