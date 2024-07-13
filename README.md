@@ -8,7 +8,7 @@ Furthermore uses:
 The program will ask every boot if you want to create a new receipt or update one already existing;
 automatically will extract text and perform string manipulation to have a final list of [(Product, Price),(...),...]
 which will be used to create a dataframe or append to an already existing one
-Photo are pre-processed with iphone's photo editor to improve contrast and drop saturation
+
 
 To execute this program use:
 - python Scontrini.py followed by:
