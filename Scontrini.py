@@ -73,26 +73,25 @@ class ImageFormatControl ():
 
 def Acq_Bill(path):
     
-
-    
-    image_path = path
-    image = cv2.imread(image_path)
+    image = cv2.imread(path)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, binary = cv2.threshold(gray, 130, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    blurred = cv2.GaussianBlur(binary, (5,5),0)
+    kernel = np.ones((2,2), np.uint8)
+    image = cv2.morphologyEx(blurred, cv2.MORPH_CLOSE, kernel) #ripete erosion and dilation sull'immagine
     
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    
-    _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    image = cv2.bitwise_not(blurred)
+    kernel = np.ones((2,2), np.uint8)
+    image = cv2.dilate(image, kernel, iterations=2)
+    image = cv2.erode(image, kernel, iterations=1)
+    image = cv2.bitwise_not(image)
     
     scale_percent = 150  
-    width = int(binary.shape[1] * scale_percent / 100)
-    height = int(binary.shape[0] * scale_percent / 100)
+    width = int(image.shape[1] * scale_percent / 100)
+    height = int(image.shape[0] * scale_percent / 100)
     dim = (width, height)
-    resized = cv2.resize(binary, dim, interpolation=cv2.INTER_LINEAR)
-
-
-
-
-    
+    resized = cv2.resize(image, dim, interpolation=cv2.INTER_LINEAR)
     
     text = reader.readtext(resized, detail = 0)
     #avoiding details for easier string manipulation
