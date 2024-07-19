@@ -1,4 +1,4 @@
-This project aims to be able to show in a CVS file a resume of a receipt.
+This project aims to be able to show in a csv file a resume of a receipt.
 Furthermore uses:
   - EasyOCR for image-to-text recognition
   - Pandas for data frame manipulation
